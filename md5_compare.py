@@ -3,6 +3,7 @@ import hashlib
 import os
 import sys
 import logging
+import fnmatch
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
@@ -46,16 +47,26 @@ def get_all_files(directory, excluded_dirs=None, ignore_files=None):
     default_ignore_folders = {'.snakemake', '.biomake'}
 
     excluded_dirs = default_ignore_folders | set(excluded_dirs or [])
-    ignore_files = default_ignore_files | set(ignore_files or [])
+    ignore_patterns = default_ignore_files | set(ignore_files or [])
+
+    def is_ignored(rel_path):
+        name = rel_path.name
+        full = rel_path.as_posix()
+        return any(
+            fnmatch.fnmatchcase(name, pat) or fnmatch.fnmatchcase(full, pat)
+            for pat in ignore_patterns
+        )
+
     result = []
+    
     for root, dirs, files in os.walk(directory):
         dirs[:] = [d for d in dirs if d not in excluded_dirs]
         for file in files:
-            path = Path(root) / file
-            rel_path = path.relative_to(directory)
+            rel_path = (Path(root) / file).relative_to(directory)
             if any(part in excluded_dirs for part in rel_path.parts):
                 continue
-            if file in ignore_files or rel_path.as_posix() in ignore_files:
+            # if file in ignore_files or rel_path.as_posix() in ignore_files:
+            if is_ignored(rel_path):
                 continue
             result.append(rel_path)
     return result
