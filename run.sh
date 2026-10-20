@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo 'initiating Mamba env...'
-. ~/.initMamba.sh
+. ~/initMamba.sh
 mamba activate standard
 
 dir1=$1
@@ -20,7 +20,7 @@ for f in "$@"; do
     ignore_args+=(--ignore "$f")
 done
 
-python md5_compare_optimised.py \
+python md5_compare.py \
     -d1 "$dir1" \
     -d2 "$dir2" \
     -t "${threads}" \
